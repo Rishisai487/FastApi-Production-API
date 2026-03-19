@@ -19,12 +19,14 @@ def verify_access_token(jwttoken:str):
     payload=jwt.decode(jwttoken,key=settings.SECRET_KEY,algorithms=[settings.ALGORITHM])
     return payload
   except JWTError:
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Session Expired")
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Could not validate credentials")
 
 def get_current_user(token:str=Depends(oauth2_scheme),db:Session=Depends(database.get_db)):
-  try:
-    payload=verify_access_token(token)
-    user=db.query(models.User).filter(models.User.id==payload["id"]).first()
-    return user
-  except JWTError:
-    raise HTTPException(status_code=401,detail="Not Authorized")
+  payload=verify_access_token(token)
+  user_id=payload.get("id")
+  if user_id is None:
+    raise HTTPException(status_code=404,detail="User Not Found")
+  user=db.query(models.User).filter(models.User.id==payload["id"]).first()
+  if user is None:
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User not found!")
+  return user
