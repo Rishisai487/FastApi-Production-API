@@ -1,0 +1,9 @@
+from fastapi import FastAPI,Depends
+from sqlalchemy.orm import Session
+from .routes import Users
+from . import database
+app=FastAPI()
+app.include_router(Users.router)
+@app.get("/")
+def home(db:Session=Depends(database.get_db)):
+  return {"message":"HOME PAGE"}
